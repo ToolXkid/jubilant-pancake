@@ -1,0 +1,68 @@
+package com.example.rewardedadapp
+
+import android.os.Bundle
+import android.widget.Button
+import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.rewarded.RewardItem
+import com.google.android.gms.ads.rewarded.RewardedAd
+import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
+import com.google.android.gms.ads.AdRequest
+
+class MainActivity : AppCompatActivity() {
+    private lateinit var watchAdButton: Button
+    private lateinit var tokenTextView: TextView
+    private var rewardedAd: RewardedAd? = null
+    private lateinit var tokenManager: TokenManager
+
+    // TODO: Replace with your actual AdMob Rewarded Ad Unit ID
+    private val adUnitId = "ca-app-pub-3940256099942544/5224354917" // Test ID
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        watchAdButton = findViewById(R.id.watchAdButton)
+        tokenTextView = findViewById(R.id.tokenTextView)
+        tokenManager = TokenManager(this)
+
+        MobileAds.initialize(this) {}
+        loadRewardedAd()
+        updateTokenDisplay()
+
+        watchAdButton.setOnClickListener {
+            if (rewardedAd != null) {
+                rewardedAd?.show(this) { rewardItem: RewardItem ->
+                    // User watched the ad, give tokens
+                    tokenManager.addTokens(rewardItem.amount)
+                    updateTokenDisplay()
+                    Toast.makeText(this, "You've earned ${rewardItem.amount} tokens!", Toast.LENGTH_SHORT).show()
+                    loadRewardedAd() // Preload next ad
+                }
+            } else {
+                Toast.makeText(this, "Ad not loaded yet. Please try again.", Toast.LENGTH_SHORT).show()
+                loadRewardedAd()
+            }
+        }
+    }
+
+    private fun loadRewardedAd() {
+        val adRequest = AdRequest.Builder().build()
+        RewardedAd.load(this, adUnitId, adRequest, object : RewardedAdLoadCallback() {
+            override fun onAdLoaded(ad: RewardedAd) {
+                rewardedAd = ad
+                watchAdButton.isEnabled = true
+            }
+            override fun onAdFailedToLoad(error: com.google.android.gms.ads.LoadAdError) {
+                rewardedAd = null
+                watchAdButton.isEnabled = false
+            }
+        })
+    }
+
+    private fun updateTokenDisplay() {
+        tokenTextView.text = "Tokens: ${tokenManager.getTokens()}"
+    }
+}

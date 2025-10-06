@@ -1,0 +1,18 @@
+package com.example.rewardedadapp
+
+import android.content.Context
+
+class TokenManager(context: Context) {
+    private val prefs = context.getSharedPreferences("tokens", Context.MODE_PRIVATE)
+
+    fun getTokens(): Int = prefs.getInt("token_count", 0)
+
+    fun addTokens(amount: Int) {
+        val newAmount = getTokens() + amount
+        prefs.edit().putInt("token_count", newAmount).apply()
+    }
+    
+    fun resetTokens() {
+        prefs.edit().putInt("token_count", 0).apply()
+    }
+}
